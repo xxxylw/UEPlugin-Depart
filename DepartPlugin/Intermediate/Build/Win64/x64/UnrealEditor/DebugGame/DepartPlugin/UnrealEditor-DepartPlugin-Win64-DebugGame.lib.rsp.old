@@ -1,0 +1,13 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-DepartPlugin-Win64-DebugGame.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"D:/_materials/_UEProjects/Depart/Depart/Intermediate/Build/Win64/x64/DepartEditor/DebugGame/UnrealEd/SharedPCH.UnrealEd.Project.NonOptimized.ValApi.ValExpApi.Cpp20.h.obj"
+"D:/_materials/_UEProjects/Depart/Depart/Plugins/DepartPlugin/Intermediate/Build/Win64/x64/UnrealEditor/DebugGame/DepartPlugin/Module.DepartPlugin.cpp.obj"
+"D:/_materials/_UEProjects/Depart/Depart/Plugins/DepartPlugin/Intermediate/Build/Win64/x64/UnrealEditor/DebugGame/DepartPlugin/DepartPlugin.cpp.obj"
+"D:/_materials/_UEProjects/Depart/Depart/Plugins/DepartPlugin/Intermediate/Build/Win64/x64/UnrealEditor/DebugGame/DepartPlugin/Default.rc2.res"
+/OUT:"D:/_materials/_UEProjects/Depart/Depart/Plugins/DepartPlugin/Intermediate/Build/Win64/x64/UnrealEditor/DebugGame/DepartPlugin/UnrealEditor-DepartPlugin-Win64-DebugGame.lib"

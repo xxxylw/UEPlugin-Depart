@@ -1,0 +1,27 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "d:\\_materials\\_ueprojects\\depart\\depart\\plugins\\departplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\debuggame\\departplugin\\module.departplugin.cpp",
+        "ProvidedModule": "",
+        "PCH": "d:\\_materials\\_ueprojects\\depart\\depart\\intermediate\\build\\win64\\x64\\departeditor\\debuggame\\unrealed\\sharedpch.unrealed.project.nonoptimized.valapi.valexpapi.cpp20.h.pch",
+        "Includes": [
+            "d:\\_materials\\_ueprojects\\depart\\depart\\plugins\\departplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\debuggame\\departplugin\\definitions.departplugin.h",
+            "d:\\_materials\\_ueprojects\\depart\\depart\\plugins\\departplugin\\intermediate\\build\\win64\\unrealeditor\\inc\\departplugin\\uht\\departplugin.init.gen.cpp",
+            "d:\\_materials\\_ueprojects\\depart\\depart\\plugins\\departplugin\\intermediate\\build\\win64\\unrealeditor\\inc\\departplugin\\uht\\myassetactionutility.gen.cpp",
+            "d:\\_materials\\_ueprojects\\depart\\depart\\plugins\\departplugin\\source\\departplugin\\public\\myassetactionutility.h",
+            "d:\\_applications\\ue_5.6\\engine\\source\\editor\\blutility\\classes\\assetactionutility.h",
+            "d:\\_applications\\ue_5.6\\engine\\source\\editor\\blutility\\classes\\editorutilityobject.h",
+            "d:\\_applications\\ue_5.6\\engine\\source\\runtime\\engine\\public\\iassetregistrytagproviderinterface.h",
+            "d:\\_applications\\ue_5.6\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\engine\\uht\\iassetregistrytagproviderinterface.generated.h",
+            "d:\\_applications\\ue_5.6\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\blutility\\uht\\editorutilityobject.generated.h",
+            "d:\\_applications\\ue_5.6\\engine\\source\\editor\\blutility\\public\\ieditorutilityextension.h",
+            "d:\\_applications\\ue_5.6\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\blutility\\uht\\ieditorutilityextension.generated.h",
+            "d:\\_applications\\ue_5.6\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\blutility\\uht\\assetactionutility.generated.h",
+            "d:\\_materials\\_ueprojects\\depart\\depart\\plugins\\departplugin\\intermediate\\build\\win64\\unrealeditor\\inc\\departplugin\\uht\\myassetactionutility.generated.h",
+            "d:\\_materials\\_ueprojects\\depart\\depart\\plugins\\departplugin\\intermediate\\build\\win64\\x64\\unrealeditor\\debuggame\\departplugin\\permoduleinline.gen.cpp",
+            "d:\\_applications\\ue_5.6\\engine\\source\\runtime\\core\\public\\hal\\permoduleinline.inl"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

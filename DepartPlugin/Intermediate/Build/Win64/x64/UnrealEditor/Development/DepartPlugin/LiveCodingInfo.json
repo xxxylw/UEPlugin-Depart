@@ -1,0 +1,9 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.DepartPlugin.cpp.obj": [
+			"PerModuleInline.gen.cpp.obj",
+			"DepartPlugin.cpp.obj"
+		]
+	}
+}
