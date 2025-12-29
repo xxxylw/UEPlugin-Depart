@@ -1,0 +1,13 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.DepartPlugin.cpp.obj": [
+			"DepartPlugin.init.gen.cpp.obj",
+			"MyAssetActionUtility.gen.cpp.obj",
+			"PerModuleInline.gen.cpp.obj",
+			"DepartPlugin.cpp.obj",
+			"MyAssetActionUtility.cpp.obj",
+			"MyDebugger.cpp.obj"
+		]
+	}
+}

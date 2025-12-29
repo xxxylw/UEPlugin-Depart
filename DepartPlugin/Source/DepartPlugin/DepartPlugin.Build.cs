@@ -28,6 +28,7 @@ public class DepartPlugin : ModuleRules
 				"Core",
                 "Blutility",
                 "Niagara",
+                "UMGEditor",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -40,6 +41,7 @@ public class DepartPlugin : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "EditorScriptingUtilities",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

@@ -5,8 +5,39 @@
 
 #include "MyDebugger.h"
 #include "EditorUtilityLibrary.h"
+#include "EditorAssetLibrary.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 
+namespace Utils{
+	static FString IncrementNameSuffix(const FString& InName)
+	{
+		FString BaseName = InName;
+		int32 Number = 0;
 
+		// 从后往前找连续数字
+		int32 Index = BaseName.Len() - 1;
+		while (Index >= 0 && FChar::IsDigit(BaseName[Index]))
+		{
+			Index--;
+		}
+
+		// 如果有数字后缀
+		if (Index < BaseName.Len() - 1)
+		{
+			FString NumberStr = BaseName.Mid(Index + 1);
+			Number = FCString::Atoi(*NumberStr);
+			BaseName = BaseName.Left(Index + 1);
+		}
+		else
+		{
+			// 没有数字，默认从 1 开始
+			Number = 0;
+		}
+
+		Number++;
+		return FString::Printf(TEXT("%s%d"), *BaseName, Number);
+	}
+};
 void UMyAssetActionUtility::Text()
 {
 #pragma region Log Example
@@ -29,6 +60,9 @@ void UMyAssetActionUtility::Text()
 
 void UMyAssetActionUtility::AddPrefix()
 {
+	FAssetRegistryModule& AssetRegistryModule =
+		FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
 	TArray<UObject*> selectedAssets = UEditorUtilityLibrary::GetSelectedAssets();
 	for (auto assest : selectedAssets)
 	{
@@ -44,6 +78,25 @@ void UMyAssetActionUtility::AddPrefix()
 				oldName.RemoveFromStart("M_");
 			}
 			newName = *prefix + oldName;
+
+			FString packagePath = assest->GetOutermost()->GetName();
+			FString longPackagePath = FPackageName::GetLongPackagePath(packagePath);
+
+			auto MakeObjectPath = [&](const FString& Name)
+				{
+					return longPackagePath + TEXT("/") + Name + TEXT(".") + Name;
+				};
+
+			FAssetData existingAsset =
+				AssetRegistryModule.Get().GetAssetByObjectPath(*MakeObjectPath(newName));
+
+			while (existingAsset.IsValid())
+			{
+				newName = Utils::IncrementNameSuffix(newName);
+				existingAsset =
+					AssetRegistryModule.Get().GetAssetByObjectPath(*MakeObjectPath(newName));
+			}
+			assest->Modify();
 			UEditorUtilityLibrary::RenameAsset(assest, newName);
 		}
 		else

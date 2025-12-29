@@ -6,8 +6,8 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(DP_LOG, Log, All)
-DEFINE_LOG_CATEGORY(DP_LOG)
+//DECLARE_LOG_CATEGORY_EXTERN(DP_LOG, Log, All)
+//DEFINE_LOG_CATEGORY(DP_LOG)
 
 // Log on Screen
 inline void ScreenDebugMessageImpl(const FColor& Color, const float& Duration, const FString& Message)
@@ -61,9 +61,9 @@ inline void NotificationMessageImpl(const FColor& Color, float Duration, const F
 #define SCREEN_ERROR(Msg)							ScreenDebugMessageImpl(FColor::Red, 8.0f, Msg)
 #define SCREEN_SUCCESS(Msg)							ScreenDebugMessageImpl(FColor::Green, 5.0f, Msg)
 
-#define LOG_ERROR(fmt, ...)							UE_LOG(DP_LOG, Error, fmt, ##__VA_ARGS__)
-#define LOG_WARNING(fmt, ...)						UE_LOG(DP_LOG, Warning, fmt, ##__VA_ARGS__)
-#define LOG_LOG(fmt, ...)							UE_LOG(DP_LOG, Log, fmt, ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...)							UE_LOG(LogTemp, Error, fmt, ##__VA_ARGS__)
+#define LOG_WARNING(fmt, ...)						UE_LOG(LogTemp, Warning, fmt, ##__VA_ARGS__)
+#define LOG_LOG(fmt, ...)							UE_LOG(LogTemp, Log, fmt, ##__VA_ARGS__)
 
 #define POPUP_MSG(MsgType, Title, Format, ...)		PopupMessageImpl(MsgType, FString::Printf(Format, ##__VA_ARGS__), Title)
 #define POPUP_LOG(Format, ...)						POPUP_MSG(EAppMsgType::Ok,        TEXT("Log"),      Format, ##__VA_ARGS__)
