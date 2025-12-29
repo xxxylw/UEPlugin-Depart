@@ -41,6 +41,8 @@ void FDepartPluginModule::StartupModule()
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	InitContentBrowserMenuExtension();
 	RegistryCustomTab();
+
+	RegisterMenus();
 }
 
 void FDepartPluginModule::ShutdownModule()
@@ -182,6 +184,42 @@ TSharedRef<SDockTab> FDepartPluginModule::OnSpawnCustomTab(const FSpawnTabArgs& 
 	TSharedRef<SDockTab> DockTab = SNew(SDockTab);
 	 
 	return DockTab;
+}
+
+void FDepartPluginModule::RegisterMenus()
+{
+	UToolMenus::RegisterStartupCallback(
+		FSimpleMulticastDelegate::FDelegate::CreateRaw(
+			this, &FDepartPluginModule::RegisterToolbarMenu));
+}
+
+void FDepartPluginModule::RegisterToolbarMenu()
+{
+	UToolMenu* ToolbarMenu =
+		UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.PlayToolBar");
+
+	FToolMenuSection& Section =
+		ToolbarMenu->FindOrAddSection("Depart");
+
+	Section.AddEntry(
+		FToolMenuEntry::InitToolBarButton(
+			"DepartPluginToolbarButton",
+			FUIAction(FExecuteAction::CreateRaw(
+				this, &FDepartPluginModule::OnToolbarButtonClicked)),
+			FText::FromString("Depart"),
+			FText::FromString("Open Depart Custom Tab"),
+			FSlateIcon(
+				"EditorStyle",
+				"LevelEditor.Tabs.Details"   // ÁÙÊ±Í¼±ê
+			)
+		)
+	);
+
+}
+
+void FDepartPluginModule::OnToolbarButtonClicked()
+{
+	FGlobalTabmanager::Get()->TryInvokeTab(FName("CustomTab"));
 }
 
 #undef LOCTEXT_NAMESPACE

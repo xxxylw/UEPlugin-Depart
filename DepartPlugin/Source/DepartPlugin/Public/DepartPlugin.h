@@ -54,6 +54,9 @@ private:
 	void UnRegistryCustomTab();
 	TSharedRef<SDockTab> OnSpawnCustomTab(const FSpawnTabArgs& SpawnTabArgs);
 
+	void RegisterMenus();
+	void RegisterToolbarMenu();
+	void OnToolbarButtonClicked();
 private:
 
 #pragma endregion // CustomTab
