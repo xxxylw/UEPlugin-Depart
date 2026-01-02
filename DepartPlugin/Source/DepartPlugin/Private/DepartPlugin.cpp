@@ -5,6 +5,7 @@
 #include "EditorAssetLibrary.h"
 #include "AssetToolsModule.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "CustomTabWidget.h"
 
 #include "MyDebugger.h"
 
@@ -41,12 +42,16 @@ void FDepartPluginModule::StartupModule()
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	InitContentBrowserMenuExtension();
 	RegistryCustomTab();
-
-	RegisterMenus();
 }
 
 void FDepartPluginModule::ShutdownModule()
 {
+	if (UToolMenus::IsToolMenuUIEnabled())
+	{
+		UToolMenus::UnRegisterStartupCallback(this);
+		UToolMenus::UnregisterOwner(this);
+	}
+
 	UnRegistryCustomTab();
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
@@ -90,6 +95,13 @@ void FDepartPluginModule::CustomMenuExtensionEntry(FMenuBuilder& fMenuBuilder)
 		FText::FromString(TEXT("Automatic grouping files in selected folder")), // tip
 		FSlateIcon(),
 		FExecuteAction::CreateRaw(this, &FDepartPluginModule::GroupFileImpl)
+	);
+
+	fMenuBuilder.AddMenuEntry(
+		FText::FromString(TEXT("DepartTab")),			// name
+		FText::FromString(TEXT("Its Depart Tab")), // tip
+		FSlateIcon(),
+		FExecuteAction::CreateRaw(this, &FDepartPluginModule::OnDepartTabClicked)
 	);
 }
 
@@ -181,11 +193,18 @@ void FDepartPluginModule::UnRegistryCustomTab()
 
 TSharedRef<SDockTab> FDepartPluginModule::OnSpawnCustomTab(const FSpawnTabArgs& SpawnTabArgs)
 {
-	TSharedRef<SDockTab> DockTab = SNew(SDockTab);
+	TSharedRef<SDockTab> DockTab = 
+		SNew(SDockTab)
+		[
+			SNew(SCunstomTabWidget)
+			.FolderPath(m_SelectedPaths[0])
+		];
 	 
 	return DockTab;
 }
 
+#pragma region ForToolBar
+/*
 void FDepartPluginModule::RegisterMenus()
 {
 	UToolMenus::RegisterStartupCallback(
@@ -216,11 +235,20 @@ void FDepartPluginModule::RegisterToolbarMenu()
 	);
 
 }
+*/
+#pragma endregion // ForToolBar
 
-void FDepartPluginModule::OnToolbarButtonClicked()
+void FDepartPluginModule::OnDepartTabClicked()
 {
+	if (m_SelectedPaths.Num() != 1)
+	{
+		POPUP_WARN(TEXT("You slected [%d] folder!(only 1)"), m_SelectedPaths.Num());
+		return;
+	}
+
 	FGlobalTabmanager::Get()->TryInvokeTab(FName("CustomTab"));
 }
+
 
 #undef LOCTEXT_NAMESPACE
 	

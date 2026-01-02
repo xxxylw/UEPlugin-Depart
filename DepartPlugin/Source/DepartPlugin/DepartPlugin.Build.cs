@@ -43,6 +43,7 @@ public class DepartPlugin : ModuleRules
 				"Slate",
 				"SlateCore",
                 "EditorScriptingUtilities",
+				"InputCore",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
