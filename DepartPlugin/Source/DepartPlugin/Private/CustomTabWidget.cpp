@@ -13,9 +13,7 @@
 
 void SCunstomTabWidget::Construct(const FArguments& InArgs)
 {	
-	m_ComboboxSrcOpts.Add(MakeShareable(new FString(TEXT("Option1"))));
-	m_ComboboxSrcOpts.Add(MakeShareable(new FString(TEXT("Option2"))));
-	m_ComboboxSrcOpts.Add(MakeShareable(new FString(TEXT("Option3"))));
+	m_ComboboxFilterMap.GetKeys(m_ComboboxSrcOpts);
 
 	TArray<FString> AssetsPaths = UEditorAssetLibrary::ListAssets(InArgs._FolderPath);
 	for (const auto& AssetPath : AssetsPaths)
@@ -23,10 +21,11 @@ void SCunstomTabWidget::Construct(const FArguments& InArgs)
 		FAssetData AssetData = UEditorAssetLibrary::FindAssetData(AssetPath);
 		if (AssetData.IsValid())
 		{
-			m_ListViewSrcOpts.Emplace(MakeShared<FAssetData>(AssetData));
+			m_AssetsInFolderPath.Emplace(MakeShared<FAssetData>(AssetData));
 		}
 
 		// Notice the MakeShareable and MakeShared
+		m_FilteredAssets = m_AssetsInFolderPath;
 	}
 
 	ChildSlot
@@ -69,7 +68,7 @@ TSharedRef<SWidget> SCunstomTabWidget::CreateComboBox()
 		]
 
 		+ SHorizontalBox::Slot()
-		.AutoWidth()
+		.MaxWidth(200)
 		.Padding(5.5)
 		.VAlign(VAlign_Center)
 		[
@@ -82,9 +81,21 @@ TSharedRef<SWidget> SCunstomTabWidget::CreateComboBox()
 				)
 				.OnSelectionChanged(this, &SCunstomTabWidget::OnComboBoxSelectionChanged)
 				[
-					SNew(STextBlock)
+					SAssignNew(m_ComboBoxText, STextBlock)
 					.Text(FText::FromString(TEXT("Option")))
 				]
+		]
+
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		.HAlign(HAlign_Right)
+		.Padding(5.5)
+		.AutoWidth()
+		[
+			SNew(SButton)
+				.Text(FText::FromString(TEXT("Invert")))
+				.OnClicked(this, &SCunstomTabWidget::OnInverseButtonClicked)
 		]
 		;
 	return CustomComboBox;
@@ -92,35 +103,26 @@ TSharedRef<SWidget> SCunstomTabWidget::CreateComboBox()
 
 TSharedRef<SWidget> SCunstomTabWidget::CreateListView()
 {
-	TSharedRef<SWidget> CustomListView =
-		SNew(SListView<TSharedPtr<FAssetData>>)
-		.ListItemsSource(&m_ListViewSrcOpts)
-		.OnGenerateRow_Lambda([](TSharedPtr<FAssetData> Item, const TSharedRef<STableViewBase>& OwnerTable)
+		SAssignNew(m_CustomListView, SListView<TSharedPtr<FAssetData>>)
+		.ListItemsSource(&m_AssetsInFolderPath)
+		.OnGenerateRow_Lambda([this](TSharedPtr<FAssetData> Item, const TSharedRef<STableViewBase>& OwnerTable)
 			{
 				return
 					SNew(SCustomTableRow, OwnerTable)
 					.AssetData(Item)
+					.OwnerWidget(SharedThis(this))
 					;
 			})
 		.HeaderRow(SetupHeaderRow())
 		;
 
-	return CustomListView;
+	return m_CustomListView.ToSharedRef();
 }
 
 TSharedRef<SWidget> SCunstomTabWidget::CreateButtonList()
 {
 	TSharedRef<SWidget> ButtonList =
 		SNew(SHorizontalBox)
-		+ SHorizontalBox::Slot()
-		.VAlign(VAlign_Center)
-		.Padding(5.5)
-		.AutoWidth()
-		[
-			SNew(SButton)
-			.Text(FText::FromString(TEXT("Inverse")))
-			.OnClicked(this, &SCunstomTabWidget::OnInverseButtonClicked)
-		]
 		+ SHorizontalBox::Slot()
 		.VAlign(VAlign_Center)
 		.Padding(5.5)
@@ -146,6 +148,12 @@ TSharedPtr<SHeaderRow> SCunstomTabWidget::SetupHeaderRow()
 		[
 			SNew(SCheckBox)
 			.OnCheckStateChanged(this, &SCunstomTabWidget::OnHeaderRowCheckBoxStateChanged)
+			.IsChecked_Lambda([&]() {
+				if (m_SelectedAssets.Num() == 0)
+					return ECheckBoxState::Unchecked;
+				return m_SelectedAssets.Num() == m_FilteredAssets.Num() ? ECheckBoxState::Checked
+					: ECheckBoxState::Undetermined;
+			})
 		]
 		
 		+ SHeaderRow::Column(CustomTabColumns::Asset)
@@ -166,13 +174,25 @@ TSharedPtr<SHeaderRow> SCunstomTabWidget::SetupHeaderRow()
 
 FReply SCunstomTabWidget::OnInverseButtonClicked()
 {
+	TArray<TSharedPtr<FAssetData>>	Temp;
+	for (auto& AssetData : m_FilteredAssets)
+	{
+		if (!m_SelectedAssets.Contains(AssetData))
+		{
+			Temp.Add(AssetData);
+		}
+	}
+	m_SelectedAssets = Temp;
 	return FReply::Handled();
 }
 
 FReply SCunstomTabWidget::OnPrintButtonClicked()
 {
-	SCREEN_LOG(__FUNCTION__);
-	LOG_LOG(TEXT("%s"), TEXT(__FUNCTION__));
+	for (auto& SelectedAsset : m_SelectedAssets)
+	{
+		SCREEN_LOG(SelectedAsset->GetAsset()->GetName());
+		LOG_LOG(TEXT("%s"), *SelectedAsset->GetAsset()->GetName());
+	}
 	return FReply::Handled();
 }
 
@@ -181,10 +201,10 @@ void SCunstomTabWidget::OnHeaderRowCheckBoxStateChanged(ECheckBoxState CheckBoxS
 	switch (CheckBoxState)
 	{
 	case ECheckBoxState::Unchecked:
-		SCREEN_LOG(TEXT("HeaderRow:Unchecked"));
+		m_SelectedAssets.Empty();
 		break;
 	case ECheckBoxState::Checked:
-		SCREEN_LOG(TEXT("HeaderRow:Checked"));
+		m_SelectedAssets = m_FilteredAssets;
 		break;
 	default:
 		break;
@@ -193,5 +213,46 @@ void SCunstomTabWidget::OnHeaderRowCheckBoxStateChanged(ECheckBoxState CheckBoxS
 
 void SCunstomTabWidget::OnComboBoxSelectionChanged(TSharedPtr<FString> InSelection, ESelectInfo::Type InSelectInfo)
 {
-	SCREEN_LOG(*InSelection);
+	m_ComboBoxText->SetText(FText::FromString(*InSelection));
+	
+	const FTopLevelAssetPath* FilterClass = m_ComboboxFilterMap.Find(InSelection);
+	m_FilteredAssets.Empty();
+	m_SelectedAssets.Empty();
+
+	if (!FilterClass)
+	{
+		return;
+	}
+	if (!FilterClass->IsValid())
+	{
+		m_FilteredAssets = m_AssetsInFolderPath;
+	}
+	else
+	{
+		for (const auto& AssetData : m_AssetsInFolderPath)
+		{
+			if (AssetData->GetClass()->GetClassPathName() == *FilterClass)
+			{
+				m_FilteredAssets.Add(AssetData);
+			}
+		}
+	}
+
+	m_CustomListView->SetListItemsSource(m_FilteredAssets);
+	m_CustomListView->RebuildList();
+}
+
+void SCunstomTabWidget::AddSelectedAsset(const TSharedPtr<FAssetData> AssetData)
+{
+	m_SelectedAssets.AddUnique(AssetData);
+}
+
+void SCunstomTabWidget::RemoveSelectedAsset(const TSharedPtr<FAssetData> AssetData)
+{
+	m_SelectedAssets.Remove(AssetData);
+}
+
+bool SCunstomTabWidget::isAssetBeSelected(const TSharedPtr<FAssetData> AssetData)
+{
+	return m_SelectedAssets.Contains(AssetData);
 }

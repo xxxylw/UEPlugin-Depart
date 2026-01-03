@@ -1,15 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "EditorAssetLibrary.h"
-
 #include "CustomTableRow.h"
+#include "CustomTabWidget.h"
 #include "MyDebugger.h"
 
-
+#include "EditorAssetLibrary.h"
 
 void SCustomTableRow::Construct(const FArguments& InArgs, const TSharedRef<STableViewBase>& OwnerTable)
 {
 	m_AssetData = InArgs._AssetData;
+	m_OwnerWidget = InArgs._OwnerWidget;
 
 	FSuperRowType::Construct(FSuperRowType::FArguments(), OwnerTable);
 
@@ -56,6 +56,7 @@ TSharedRef<SWidget> SCustomTableRow::GenerateWidgetForColumn(const FName& InColu
 		return
 			SNew(SCheckBox)
 			.OnCheckStateChanged(this, &SCustomTableRow::OnTableRowCheckBoxStateChanged)
+			.IsChecked(this, &SCustomTableRow::OnCheckBoxIsChecked)
 			;
 	}
 	return SNullWidget::NullWidget;
@@ -66,12 +67,18 @@ void SCustomTableRow::OnTableRowCheckBoxStateChanged(ECheckBoxState CheckBoxStat
 	switch (CheckBoxState)
 	{
 	case ECheckBoxState::Unchecked:
-		SCREEN_LOG(FString::Printf(TEXT("%s Unchecked"), *m_AssetData->GetAsset()->GetName()));
+		m_OwnerWidget->RemoveSelectedAsset(m_AssetData);
 		break;
 	case ECheckBoxState::Checked:
-		SCREEN_LOG(FString::Printf(TEXT("%s Checked"), *m_AssetData->GetAsset()->GetName()));
+		m_OwnerWidget->AddSelectedAsset(m_AssetData);
 		break;
 	default:
 		break;
 	}
+}
+
+ECheckBoxState SCustomTableRow::OnCheckBoxIsChecked() const
+{
+	return m_OwnerWidget->isAssetBeSelected(m_AssetData) ? ECheckBoxState::Checked
+		: ECheckBoxState::Unchecked;
 }

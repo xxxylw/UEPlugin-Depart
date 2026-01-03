@@ -7,6 +7,8 @@
  * 
  */
 
+class SCunstomTabWidget;
+
 namespace CustomTabColumns
 {
 	inline const FName Asset			(TEXT("Asset"));
@@ -19,6 +21,7 @@ class SCustomTableRow : public SMultiColumnTableRow<TSharedPtr<FAssetData>>
 {
 	SLATE_BEGIN_ARGS(SCustomTableRow) {}
 		SLATE_ARGUMENT(TSharedPtr<FAssetData>, AssetData)
+		SLATE_ARGUMENT(TSharedPtr<SCunstomTabWidget>, OwnerWidget)
 	SLATE_END_ARGS()
 
 public:
@@ -29,7 +32,10 @@ public:
 private:
 	void OnTableRowCheckBoxStateChanged(ECheckBoxState CheckBoxState);
 
+	ECheckBoxState OnCheckBoxIsChecked() const;
+
 private:
 	TSharedPtr<FAssetData> m_AssetData;
+	TSharedPtr <SCunstomTabWidget> m_OwnerWidget;
 };
 
