@@ -19,10 +19,10 @@ void SCustomTableRow::Construct(const FArguments& InArgs, const TSharedRef<STabl
 
 TSharedRef<SWidget> SCustomTableRow::GenerateWidgetForColumn(const FName& InColumnName)
 {
-	//if (!m_AssetData->IsValid())
-	//{
-	//	return SNullWidget::NullWidget;
-	//}
+	if (!m_AssetData->IsValid())
+	{
+		return SNullWidget::NullWidget;
+	}
 	FTextBlockStyle TextBlockStyle = FTextBlockStyle::GetDefault();
 	TextBlockStyle.ColorAndOpacity = FSlateColor(FColor::Silver);
 	TextBlockStyle.SetShadowColorAndOpacity(FColor::Silver);

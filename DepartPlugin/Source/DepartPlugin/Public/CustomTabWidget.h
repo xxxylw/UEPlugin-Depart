@@ -19,7 +19,7 @@ class SCunstomTabWidget : public SCompoundWidget
 public:
 	void Construct(const FArguments& InArgs);
 	
-
+	void UnBindAssetChangedHandle();
 private: // Small Fuc
 	TSharedRef<SWidget> CreateComboBox();
 	TSharedRef<SWidget> CreateListView();
@@ -35,17 +35,30 @@ private: // Small Fuc
 	void AddSelectedAsset(const TSharedPtr<FAssetData> AssetData);
 	void RemoveSelectedAsset(const TSharedPtr<FAssetData> AssetData);
 	bool isAssetBeSelected(const TSharedPtr<FAssetData> AssetData);
+
+	TSharedPtr<SWidget> OnListViewMenuOpening();
+	void OnFindBtnClicked();
+	void OnDeleteBtnClicked();
+
+	void FilterAssets();
+	void GetAssetsInFolderPath();
+
 private:
+	FString m_FolderPath;
 	TArray<TSharedPtr<FString>>		m_ComboboxSrcOpts;
 	TArray<TSharedPtr<FAssetData>>	m_AssetsInFolderPath;
 	TArray<TSharedPtr<FAssetData>>	m_SelectedAssets;
 	TArray<TSharedPtr<FAssetData>>	m_FilteredAssets;
+	FTopLevelAssetPath* m_FilterType;
 
 	TSharedPtr<STextBlock> m_ComboBoxText;
-	TSharedPtr<SListView<TSharedPtr<FAssetData>>> m_CustomListView;
+	TSharedPtr<SListView<TSharedPtr<FAssetData>>> m_ListView;
+
+	FDelegateHandle m_AssetAddedHandle;
+	FDelegateHandle m_AssetRemovedHandle;
 
 	TMap<TSharedPtr<FString>, FTopLevelAssetPath> m_ComboboxFilterMap = {
-		{MakeShared<FString>(TEXT("All")),					FTopLevelAssetPath()},
+		{MakeShared<FString>(TEXT("All")),					nullptr },
 		{MakeShared<FString>(TEXT("BluePrint")),			UBlueprint::StaticClass()->GetClassPathName()},
 		{MakeShared<FString>(TEXT("Texture2D")),			UTexture2D::StaticClass()->GetClassPathName()},
 		{MakeShared<FString>(TEXT("StaticMesh")),			UStaticMesh::StaticClass()->GetClassPathName()},

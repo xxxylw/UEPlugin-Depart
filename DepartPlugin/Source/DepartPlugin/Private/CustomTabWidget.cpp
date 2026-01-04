@@ -6,27 +6,30 @@
 #include "MyDebugger.h"
 
 #include "EditorAssetLibrary.h"
-
-
-
-
+#include "ObjectTools.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 
 void SCunstomTabWidget::Construct(const FArguments& InArgs)
 {	
+	m_FolderPath = InArgs._FolderPath;
+
 	m_ComboboxFilterMap.GetKeys(m_ComboboxSrcOpts);
 
-	TArray<FString> AssetsPaths = UEditorAssetLibrary::ListAssets(InArgs._FolderPath);
-	for (const auto& AssetPath : AssetsPaths)
-	{
-		FAssetData AssetData = UEditorAssetLibrary::FindAssetData(AssetPath);
-		if (AssetData.IsValid())
-		{
-			m_AssetsInFolderPath.Emplace(MakeShared<FAssetData>(AssetData));
-		}
+	GetAssetsInFolderPath();
+	m_FilteredAssets = m_AssetsInFolderPath;
 
-		// Notice the MakeShareable and MakeShared
-		m_FilteredAssets = m_AssetsInFolderPath;
-	}
+	FAssetRegistryModule& AssetRegistryModule =
+		FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
+	m_AssetAddedHandle = AssetRegistryModule.Get().OnAssetAdded().AddLambda([this](const FAssetData& AssetData) {
+			GetAssetsInFolderPath();
+			FilterAssets();
+			UEditorAssetLibrary::SaveAsset(AssetData.GetObjectPathString());
+		});
+	m_AssetRemovedHandle = AssetRegistryModule.Get().OnAssetRemoved().AddLambda([this](const FAssetData& AssetData) {
+			UEditorAssetLibrary::SaveAsset(AssetData.GetObjectPathString());
+			GetAssetsInFolderPath();
+			FilterAssets();
+		});
 
 	ChildSlot
 	[
@@ -52,6 +55,14 @@ void SCunstomTabWidget::Construct(const FArguments& InArgs)
 			CreateButtonList()
 		]
 	];
+}
+
+void SCunstomTabWidget::UnBindAssetChangedHandle()
+{
+	FAssetRegistryModule& AssetRegistryModule =
+		FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
+	AssetRegistryModule.Get().OnAssetAdded().Remove(m_AssetAddedHandle);
+	AssetRegistryModule.Get().OnAssetRemoved().Remove(m_AssetRemovedHandle);
 }
 
 TSharedRef<SWidget> SCunstomTabWidget::CreateComboBox()
@@ -82,7 +93,7 @@ TSharedRef<SWidget> SCunstomTabWidget::CreateComboBox()
 				.OnSelectionChanged(this, &SCunstomTabWidget::OnComboBoxSelectionChanged)
 				[
 					SAssignNew(m_ComboBoxText, STextBlock)
-					.Text(FText::FromString(TEXT("Option")))
+					.Text(FText::FromString(TEXT("All")))
 				]
 		]
 
@@ -103,8 +114,8 @@ TSharedRef<SWidget> SCunstomTabWidget::CreateComboBox()
 
 TSharedRef<SWidget> SCunstomTabWidget::CreateListView()
 {
-		SAssignNew(m_CustomListView, SListView<TSharedPtr<FAssetData>>)
-		.ListItemsSource(&m_AssetsInFolderPath)
+		SAssignNew(m_ListView, SListView<TSharedPtr<FAssetData>>)
+		.ListItemsSource(&m_FilteredAssets)
 		.OnGenerateRow_Lambda([this](TSharedPtr<FAssetData> Item, const TSharedRef<STableViewBase>& OwnerTable)
 			{
 				return
@@ -114,9 +125,10 @@ TSharedRef<SWidget> SCunstomTabWidget::CreateListView()
 					;
 			})
 		.HeaderRow(SetupHeaderRow())
+		.OnContextMenuOpening(this, &SCunstomTabWidget::OnListViewMenuOpening)
 		;
 
-	return m_CustomListView.ToSharedRef();
+	return m_ListView.ToSharedRef();
 }
 
 TSharedRef<SWidget> SCunstomTabWidget::CreateButtonList()
@@ -215,31 +227,14 @@ void SCunstomTabWidget::OnComboBoxSelectionChanged(TSharedPtr<FString> InSelecti
 {
 	m_ComboBoxText->SetText(FText::FromString(*InSelection));
 	
-	const FTopLevelAssetPath* FilterClass = m_ComboboxFilterMap.Find(InSelection);
-	m_FilteredAssets.Empty();
-	m_SelectedAssets.Empty();
-
-	if (!FilterClass)
-	{
-		return;
-	}
-	if (!FilterClass->IsValid())
+	m_FilterType = m_ComboboxFilterMap.Find(InSelection);
+	if (!m_FilterType)
 	{
 		m_FilteredAssets = m_AssetsInFolderPath;
+		return;
 	}
-	else
-	{
-		for (const auto& AssetData : m_AssetsInFolderPath)
-		{
-			if (AssetData->GetClass()->GetClassPathName() == *FilterClass)
-			{
-				m_FilteredAssets.Add(AssetData);
-			}
-		}
-	}
-
-	m_CustomListView->SetListItemsSource(m_FilteredAssets);
-	m_CustomListView->RebuildList();
+	
+	FilterAssets();
 }
 
 void SCunstomTabWidget::AddSelectedAsset(const TSharedPtr<FAssetData> AssetData)
@@ -255,4 +250,95 @@ void SCunstomTabWidget::RemoveSelectedAsset(const TSharedPtr<FAssetData> AssetDa
 bool SCunstomTabWidget::isAssetBeSelected(const TSharedPtr<FAssetData> AssetData)
 {
 	return m_SelectedAssets.Contains(AssetData);
+}
+
+TSharedPtr<SWidget> SCunstomTabWidget::OnListViewMenuOpening()
+{
+	FMenuBuilder MenuBuilder(
+		true,
+		TSharedPtr<FUICommandList>()
+	);
+
+	MenuBuilder.AddMenuEntry(
+		FText::FromString(TEXT("Find")),
+		FText::FromString(TEXT("Find selected asset")),
+		FSlateIcon(),
+		FExecuteAction::CreateRaw(this, &SCunstomTabWidget::OnFindBtnClicked)
+	);
+	MenuBuilder.AddMenuEntry(
+		FText::FromString(TEXT("Delete")),
+		FText::FromString(TEXT("Delete selected asset")),
+		FSlateIcon(),
+		FExecuteAction::CreateRaw(this, &SCunstomTabWidget::OnDeleteBtnClicked)
+	);
+
+	return MenuBuilder.MakeWidget();
+}
+
+void SCunstomTabWidget::OnFindBtnClicked()
+{
+	TArray<TSharedPtr<FAssetData>> SelectedItems = m_ListView->GetSelectedItems();
+	if (SelectedItems.IsEmpty())
+	{
+		return;
+	}
+
+	TArray<FString> AssetPaths;
+	for (TSharedPtr<FAssetData> SelectedItem : SelectedItems)
+		AssetPaths.Add(SelectedItem->GetObjectPathString());
+
+	UEditorAssetLibrary::SyncBrowserToObjects(AssetPaths);
+}
+
+void SCunstomTabWidget::OnDeleteBtnClicked()
+{
+	TArray<TSharedPtr<FAssetData>> SelectedItems = m_ListView->GetSelectedItems();
+	if (SelectedItems.IsEmpty())
+	{
+		return;
+	}
+
+	TArray<FAssetData> ToBeDeletedAssets;
+	for (auto& SelectedItem : SelectedItems)
+	{
+		ToBeDeletedAssets.Add(*SelectedItem);
+	}
+	ObjectTools::DeleteAssets(ToBeDeletedAssets);
+}
+
+void SCunstomTabWidget::FilterAssets()
+{
+	m_FilteredAssets.Empty();
+	m_SelectedAssets.Empty();
+	if (m_FilterType == nullptr)
+	{
+		m_FilteredAssets = m_AssetsInFolderPath;
+	}
+	else
+	{
+		for (const auto& AssetData : m_AssetsInFolderPath)
+		{
+			if (AssetData->GetClass()->GetClassPathName() == *m_FilterType)
+			{
+				m_FilteredAssets.Add(AssetData);
+			}
+		}
+	}
+	m_ListView->RebuildList();
+}
+
+void SCunstomTabWidget::GetAssetsInFolderPath()
+{
+	m_AssetsInFolderPath.Empty();
+
+	TArray<FString> AssetsPaths = UEditorAssetLibrary::ListAssets(m_FolderPath);
+	for (const auto& AssetPath : AssetsPaths)
+	{
+		FAssetData AssetData = UEditorAssetLibrary::FindAssetData(AssetPath);
+		if (AssetData.IsValid())
+		{
+			// Notice the MakeShareable and MakeShared
+			m_AssetsInFolderPath.Emplace(MakeShared<FAssetData>(AssetData));
+		}
+	}
 }

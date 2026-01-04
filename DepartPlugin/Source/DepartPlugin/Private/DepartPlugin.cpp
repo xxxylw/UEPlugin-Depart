@@ -195,6 +195,10 @@ TSharedRef<SDockTab> FDepartPluginModule::OnSpawnCustomTab(const FSpawnTabArgs& 
 {
 	TSharedRef<SDockTab> DockTab = 
 		SNew(SDockTab)
+		.OnTabClosed_Lambda([](TSharedRef<SDockTab> Tab) {
+			StaticCastSharedRef<SCunstomTabWidget>(
+				Tab->GetContent())->UnBindAssetChangedHandle();
+		})
 		[
 			SNew(SCunstomTabWidget)
 			.FolderPath(m_SelectedPaths[0])

@@ -44,6 +44,7 @@ public class DepartPlugin : ModuleRules
 				"SlateCore",
                 "EditorScriptingUtilities",
 				"InputCore",
+				"UnrealEd",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
