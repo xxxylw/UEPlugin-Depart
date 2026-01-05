@@ -66,7 +66,7 @@ void UMyAssetActionUtility::AddPrefix()
 	TArray<UObject*> selectedAssets = UEditorUtilityLibrary::GetSelectedAssets();
 	for (auto assest : selectedAssets)
 	{
-		const FString* prefix = prefixMap.Find(assest->GetClass());
+		const FString* prefix = m_PrefixMap.Find(assest->GetClass());
 		if (prefix != nullptr)
 		{
 			FString newName, oldName = assest->GetName();
@@ -104,6 +104,74 @@ void UMyAssetActionUtility::AddPrefix()
 			// *FString -> TChar*
 			SCREEN_WARN(FString::Printf(TEXT("Can't find class %s"), *assest->GetClass()->GetName()));
 			LOG_WARNING(TEXT("Can't find class %s in PrefixMap"), *assest->GetClass()->GetName());
+		}
+	}
+}
+
+void UMyAssetActionUtility::Duplicate(int Count)
+{
+	if (Count <= 0 || Count > 10)
+	{
+		SCREEN_WARN(TEXT("Please Enter a Valid number!(1 - 10)"));
+		return;
+	}
+
+	FAssetRegistryModule& AssetRegistryModule =
+		FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+	TArray<FAssetData> AssetDatas = UEditorUtilityLibrary::GetSelectedAssetData();
+	for (const auto& AssetData : AssetDatas)
+	{
+		UObject* Asset = AssetData.GetAsset();
+		if (!Asset)
+		{
+			continue;
+		}
+
+		const FString* Prefix = m_PrefixMap.Find(Asset->GetClass());
+		FString BaseName = Asset->GetName();
+
+		if (!Prefix)
+		{
+			SCREEN_WARN(FString::Printf(
+				TEXT("Can't find class %s"), *Asset->GetClass()->GetName()));
+			continue;
+		}
+
+		if (Asset->IsA<UMaterialInstanceConstant>())
+		{
+			BaseName.RemoveFromEnd(TEXT("_Inst"));
+			BaseName.RemoveFromStart(TEXT("M_"));
+		}
+
+		FString PackagePath = Asset->GetOutermost()->GetName();
+		FString LongPackagePath = FPackageName::GetLongPackagePath(PackagePath);
+
+		auto MakeObjectPath = [&](const FString& Name)
+			{
+				return LongPackagePath + TEXT("/") + Name + TEXT(".") + Name;
+			};
+
+		for (int32 i = 0; i < Count; ++i)
+		{
+			FString NewName = BaseName.StartsWith(*Prefix) ? BaseName : *Prefix + BaseName;
+
+			FAssetData ExistingAsset =
+				AssetRegistryModule.Get().GetAssetByObjectPath(*MakeObjectPath(NewName));
+
+			while (ExistingAsset.IsValid())
+			{
+				NewName = Utils::IncrementNameSuffix(NewName);
+				ExistingAsset =
+					AssetRegistryModule.Get().GetAssetByObjectPath(*MakeObjectPath(NewName));
+			}
+
+			// Duplicate
+			const FString SourcePath = AssetData.GetObjectPathString();
+			const FString DestPath = MakeObjectPath(NewName);
+
+			UEditorAssetLibrary::DuplicateAsset(SourcePath, DestPath);
+			UEditorAssetLibrary::SaveAsset(DestPath);
 		}
 	}
 }

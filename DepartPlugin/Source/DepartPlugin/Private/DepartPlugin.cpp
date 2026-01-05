@@ -5,9 +5,10 @@
 #include "EditorAssetLibrary.h"
 #include "AssetToolsModule.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "CustomTabWidget.h"
 
+#include "CustomTabWidget.h"
 #include "MyDebugger.h"
+#include "CustomStyle.h"
 
 #define LOCTEXT_NAMESPACE "FDepartPluginModule"
 
@@ -40,19 +41,29 @@ namespace Utils
 void FDepartPluginModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	FCustomStyle::Initialize();
+	FCustomStyle::ReloadTextures();
 	InitContentBrowserMenuExtension();
 	RegistryCustomTab();
 }
 
 void FDepartPluginModule::ShutdownModule()
 {
+#pragma region ForToolBar
+	/*
+	for ToolBar
 	if (UToolMenus::IsToolMenuUIEnabled())
 	{
 		UToolMenus::UnRegisterStartupCallback(this);
 		UToolMenus::UnregisterOwner(this);
 	}
+	
+	*/
+#pragma endregion // ForToolBar
 
 	UnRegistryCustomTab();
+
+	FCustomStyle::Shutdown();
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
 }
@@ -93,14 +104,14 @@ void FDepartPluginModule::CustomMenuExtensionEntry(FMenuBuilder& fMenuBuilder)
 	fMenuBuilder.AddMenuEntry(
 		FText::FromString(TEXT("Group File")),			// name
 		FText::FromString(TEXT("Automatic grouping files in selected folder")), // tip
-		FSlateIcon(),
+		FSlateIcon(FCustomStyle::GetStyleSetName(), CustomStyleSetName::Candy),
 		FExecuteAction::CreateRaw(this, &FDepartPluginModule::GroupFileImpl)
 	);
 
 	fMenuBuilder.AddMenuEntry(
 		FText::FromString(TEXT("DepartTab")),			// name
 		FText::FromString(TEXT("Its Depart Tab")), // tip
-		FSlateIcon(),
+		FSlateIcon(FCustomStyle::GetStyleSetName(), CustomStyleSetName::SantaClaus),
 		FExecuteAction::CreateRaw(this, &FDepartPluginModule::OnDepartTabClicked)
 	);
 }
@@ -181,7 +192,9 @@ void FDepartPluginModule::RegistryCustomTab()
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(
 		FName(TEXT("CustomTab")),
 		FOnSpawnTab::CreateRaw(this, &FDepartPluginModule::OnSpawnCustomTab)
-	).SetMenuType(ETabSpawnerMenuType::Hidden);
+	).SetMenuType(ETabSpawnerMenuType::Hidden)
+		.SetIcon(FSlateIcon(FCustomStyle::GetStyleSetName(), CustomStyleSetName::Christmas))
+		;
 }
 
 void FDepartPluginModule::UnRegistryCustomTab()
@@ -195,6 +208,7 @@ TSharedRef<SDockTab> FDepartPluginModule::OnSpawnCustomTab(const FSpawnTabArgs& 
 {
 	TSharedRef<SDockTab> DockTab = 
 		SNew(SDockTab)
+		.TabRole(ETabRole::NomadTab)
 		.OnTabClosed_Lambda([](TSharedRef<SDockTab> Tab) {
 			StaticCastSharedRef<SCunstomTabWidget>(
 				Tab->GetContent())->UnBindAssetChangedHandle();

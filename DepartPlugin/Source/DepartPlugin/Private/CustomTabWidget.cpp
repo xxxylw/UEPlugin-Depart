@@ -4,6 +4,7 @@
 #include "CustomTabWidget.h"
 #include "CustomTableRow.h"
 #include "MyDebugger.h"
+#include "CustomStyle.h"
 
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
@@ -262,13 +263,13 @@ TSharedPtr<SWidget> SCunstomTabWidget::OnListViewMenuOpening()
 	MenuBuilder.AddMenuEntry(
 		FText::FromString(TEXT("Find")),
 		FText::FromString(TEXT("Find selected asset")),
-		FSlateIcon(),
+		FSlateIcon(FCustomStyle::GetStyleSetName(), CustomStyleSetName::ChristmasTree),
 		FExecuteAction::CreateRaw(this, &SCunstomTabWidget::OnFindBtnClicked)
 	);
 	MenuBuilder.AddMenuEntry(
 		FText::FromString(TEXT("Delete")),
 		FText::FromString(TEXT("Delete selected asset")),
-		FSlateIcon(),
+		FSlateIcon(FCustomStyle::GetStyleSetName(), CustomStyleSetName::ChristmasSock),
 		FExecuteAction::CreateRaw(this, &SCunstomTabWidget::OnDeleteBtnClicked)
 	);
 

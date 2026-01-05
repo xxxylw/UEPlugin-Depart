@@ -25,8 +25,11 @@ public:
 	UFUNCTION(CallInEditor)
 	void AddPrefix();
 
+	UFUNCTION(CallInEditor)
+	void Duplicate(int Count);
+
 private:
-	TMap<UClass*, FString> prefixMap =
+	TMap<UClass*, FString> m_PrefixMap =
 	{
 		{	UBlueprint::StaticClass(),					TEXT("BP_")},
 		{	UMaterial::StaticClass(),					TEXT("M_")},

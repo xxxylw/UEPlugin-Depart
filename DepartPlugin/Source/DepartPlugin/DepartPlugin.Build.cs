@@ -30,6 +30,7 @@ public class DepartPlugin : ModuleRules
                 "Niagara",
                 "UMGEditor",
                 "ToolMenus",
+				"UMG",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -45,6 +46,7 @@ public class DepartPlugin : ModuleRules
                 "EditorScriptingUtilities",
 				"InputCore",
 				"UnrealEd",
+				"Projects",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
