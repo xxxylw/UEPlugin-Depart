@@ -2,9 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Logging/LogMacros.h"
-
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
+
+#include "CustomStyle.h"
 
 //DECLARE_LOG_CATEGORY_EXTERN(DP_LOG, Log, All)
 //DEFINE_LOG_CATEGORY(DP_LOG)
@@ -37,11 +38,11 @@ inline void NotificationMessageImpl(const FColor& Color, float Duration, const F
 
 	if (Color == FColor::Red || Color == FColor::Orange)
 	{
-		Info.Image = FCoreStyle::Get().GetBrush(TEXT("MessageLog.WarningIcon"));
+		Info.Image = FCustomStyle::Get().GetBrush(TEXT("SnowGlobe"));
 	}
 	else if (Color == FColor::Green)
 	{
-		Info.Image = FCoreStyle::Get().GetBrush(TEXT("MessageLog.SuccessIcon"));
+		Info.Image = FCustomStyle::Get().GetBrush(TEXT("SnowGlobe"));
 	}
 
 	FSlateNotificationManager::Get().AddNotification(Info);
@@ -71,7 +72,7 @@ inline void NotificationMessageImpl(const FColor& Color, float Duration, const F
 #define POPUP_ERROR(Format, ...)					POPUP_MSG(EAppMsgType::Ok,        TEXT("Error"),    Format, ##__VA_ARGS__)
 
 #define NOTIFY_MSG(Color, Duration, Format, ...)	NotificationMessageImpl(Color, Duration, FString::Printf(Format, ##__VA_ARGS__))
-#define NOTIFY_LOG(...)								NOTIFY_MSG(FColor::White,    3.0f, __VA_ARGS__)
+#define NOTIFY_LOG(...)								NOTIFY_MSG(FColor::White,    5.0f, __VA_ARGS__)
 #define NOTIFY_WARN(...)							NOTIFY_MSG(FColor::Orange,   5.0f, __VA_ARGS__)
 #define NOTIFY_ERROR(...)							NOTIFY_MSG(FColor::Red,      8.0f, __VA_ARGS__)
-#define NOTIFY_SUCCESS(...)							NOTIFY_MSG(FColor::Green,    3.0f, __VA_ARGS__)
+#define NOTIFY_SUCCESS(...)							NOTIFY_MSG(FColor::Green,    5.0f, __VA_ARGS__)
