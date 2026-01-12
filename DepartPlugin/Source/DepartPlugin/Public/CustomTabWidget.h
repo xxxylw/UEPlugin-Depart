@@ -25,6 +25,10 @@ private: // Small Fuc
 	TSharedRef<SWidget> CreateListView();
 	TSharedRef<SWidget> CreateButtonList();
 
+	TSharedRef<SWidget> CreateWidget0();
+	TSharedRef<SWidget> CreateWidget1();
+	TSharedRef<SWidget> SwitchButton();
+
 	TSharedPtr<SHeaderRow> SetupHeaderRow();
 
 	FReply OnInverseButtonClicked();
@@ -52,6 +56,7 @@ private:
 	FTopLevelAssetPath* m_FilterType;
 
 	TSharedPtr<STextBlock> m_ComboBoxText;
+	TSharedPtr<SWidgetSwitcher> m_WidgetSwitcher;
 	TSharedPtr<SListView<TSharedPtr<FAssetData>>> m_ListView;
 
 	FDelegateHandle m_AssetAddedHandle;

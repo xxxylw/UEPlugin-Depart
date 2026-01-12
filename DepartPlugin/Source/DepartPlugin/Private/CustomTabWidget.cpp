@@ -6,6 +6,7 @@
 #include "MyDebugger.h"
 #include "CustomStyle.h"
 
+#include "Widgets/Layout/SWidgetSwitcher.h"
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
 #include "AssetRegistry/AssetRegistryModule.h"
@@ -34,27 +35,28 @@ void SCunstomTabWidget::Construct(const FArguments& InArgs)
 
 	ChildSlot
 	[
-		SNew(SVerticalBox)
-		+SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(5.5)
-		[
-			CreateComboBox()
-		]
+		//SNew(SVerticalBox)
+		//	+ SVerticalBox::Slot()
+		//	.AutoHeight()
+		//	[
+		//		SwitchButton()
+		//	]
 
-		+ SVerticalBox::Slot()
-		.VAlign(VAlign_Fill)
-		[
-			CreateListView()
-		]
+		//+SVerticalBox::Slot()
+		//.AutoHeight()
+		//[
+		//	SAssignNew(m_WidgetSwitcher, SWidgetSwitcher)
+		//		+ SWidgetSwitcher::Slot()
+		//		[
+		//			CreateWidget0()
+		//		]
 
-		+ SVerticalBox::Slot()
-		.AutoHeight()
-		.HAlign(HAlign_Right)
-		.Padding(5.5)
-		[
-			CreateButtonList()
-		]
+		//	+ SWidgetSwitcher::Slot()
+		//		[
+		//			CreateWidget1()
+		//		]
+		//]
+		CreateWidget0()
 	];
 }
 
@@ -147,6 +149,71 @@ TSharedRef<SWidget> SCunstomTabWidget::CreateButtonList()
 		]
 	;
 	return ButtonList;
+}
+
+TSharedRef<SWidget> SCunstomTabWidget::CreateWidget0()
+{
+	return 
+		SNew(SVerticalBox)
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5.5)
+		[
+			CreateComboBox()
+		]
+
+	+ SVerticalBox::Slot()
+		.VAlign(VAlign_Fill)
+		[
+			CreateListView()
+		]
+
+	+ SVerticalBox::Slot()
+		.AutoHeight()
+		.HAlign(HAlign_Right)
+		.Padding(5.5)
+		[
+			CreateButtonList()
+		]
+	;
+}
+
+TSharedRef<SWidget> SCunstomTabWidget::CreateWidget1()
+{
+	return
+		SNew(STextBlock)
+		.Text(FText::FromString(TEXT("Hello World!")))
+		;
+}
+
+TSharedRef<SWidget> SCunstomTabWidget::SwitchButton()
+{
+	return
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.Padding(5.5)
+		[
+			SNew(SButton)
+			.Text(FText::FromString(TEXT("Widget0")))
+			.OnClicked_Lambda([this]() {
+				m_WidgetSwitcher->SetActiveWidgetIndex(0);
+				return FReply::Handled();
+			})
+		]
+
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.Padding(5.5)
+		[
+			SNew(SButton)
+			.Text(FText::FromString(TEXT("Widget1")))
+			.OnClicked_Lambda([this]() {
+				m_WidgetSwitcher->SetActiveWidgetIndex(1);
+				return FReply::Handled();
+			})
+		]
+		;
 }
 
 TSharedPtr<SHeaderRow> SCunstomTabWidget::SetupHeaderRow()
@@ -311,7 +378,7 @@ void SCunstomTabWidget::FilterAssets()
 {
 	m_FilteredAssets.Empty();
 	m_SelectedAssets.Empty();
-	if (m_FilterType == nullptr)
+	if (m_FilterType == nullptr || !m_FilterType->IsValid())
 	{
 		m_FilteredAssets = m_AssetsInFolderPath;
 	}
