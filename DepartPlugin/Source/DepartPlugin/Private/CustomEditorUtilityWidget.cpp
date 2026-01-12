@@ -5,6 +5,7 @@
 
 #include "Subsystems/EditorActorSubsystem.h"
 #include "Engine/StaticMeshActor.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #include "MyDebugger.h"
 
@@ -192,20 +193,68 @@ void UCustomEditorUtilityWidget::ResetAllSelectedActors()
 		{
 			if(Saved->Num() > 0)
 				Actor->SetActorLocation(Saved->Pop());
+			if (Saved->Num() == 0)
+				m_ActorsSavedLocation.Remove(Actor);
 		}
 
 		if (auto Saved = m_ActorsSavedRotation.Find(Actor))
 		{
-			Actor->SetActorRotation(Saved->Pop());
+			if (Saved->Num() > 0)
+				Actor->SetActorRotation(Saved->Pop());
+			if (Saved->Num() == 0)
+				m_ActorsSavedLocation.Remove(Actor);
 		}
 
 		if (auto Saved = m_ActorsSavedScale.Find(Actor))
 		{
-			Actor->SetActorScale3D(Saved->Pop());
+			if (Saved->Num() > 0)
+				Actor->SetActorScale3D(Saved->Pop());
+			if (Saved->Num() == 0)
+				m_ActorsSavedLocation.Remove(Actor);
 		}
 	}
 
 	NOTIFY_SUCCESS(TEXT("Success:Reset %d actors"), SelectedActors.Num());
+}
+
+void UCustomEditorUtilityWidget::AdsorbedToSurface()
+{
+	GetEditorActorSubsystem();
+
+	TArray<AActor*> SelectedActors = EditorActorSubsystem->GetSelectedLevelActors();
+
+	for (auto Actor : SelectedActors)
+	{
+		if (!m_ActorsSavedLocation.Contains(Actor))
+			m_ActorsSavedLocation.Add(Actor, TArray<FVector>());
+		m_ActorsSavedLocation[Actor].Add(Actor->GetActorLocation());
+		if (!m_ActorsSavedRotation.Contains(Actor))
+			m_ActorsSavedRotation.Add(Actor, TArray<FQuat>());
+		m_ActorsSavedRotation[Actor].Add(Actor->GetActorQuat());
+
+		UWorld* World = Actor->GetWorld();
+		FHitResult HitResult;
+		FVector Start = Actor->GetActorLocation() + FVector::UpVector * 1000;
+		FVector End = Actor->GetActorLocation() + FVector::DownVector * 1000;
+		FCollisionQueryParams CollisionQueryParams;
+		CollisionQueryParams.AddIgnoredActor(Actor);
+
+		if (World->LineTraceSingleByChannel(
+			HitResult,
+			Start,
+			End,
+			ECollisionChannel::ECC_Visibility,
+			CollisionQueryParams
+		))
+		{
+			FRotator AlignRot = UKismetMathLibrary::MakeRotFromZX(
+				HitResult.Normal,
+				Actor->GetActorForwardVector()
+			);
+			Actor->SetActorLocation(HitResult.Location);
+			Actor->SetActorRotation(AlignRot);
+		}
+	}
 }
 
 void UCustomEditorUtilityWidget::GetEditorActorSubsystem()

@@ -34,6 +34,9 @@ private:
 	UFUNCTION(BlueprintCallable, Category = "Depart.Reset")
 	void ResetAllSelectedActors();
 
+	UFUNCTION(BlueprintCallable, Category = "Depart.Adsorb")
+	void AdsorbedToSurface();
+
 private:
 	void GetEditorActorSubsystem();
 
