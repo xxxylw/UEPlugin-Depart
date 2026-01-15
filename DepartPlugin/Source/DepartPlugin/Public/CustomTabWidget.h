@@ -27,7 +27,7 @@ private: // Small Fuc
 
 	TSharedRef<SWidget> CreateWidget0();
 	TSharedRef<SWidget> CreateWidget1();
-	TSharedRef<SWidget> SwitchButton();
+	TSharedRef<SWidget> SegmentdControl();
 
 	TSharedPtr<SHeaderRow> SetupHeaderRow();
 

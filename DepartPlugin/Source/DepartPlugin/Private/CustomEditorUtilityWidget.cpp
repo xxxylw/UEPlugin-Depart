@@ -6,6 +6,12 @@
 #include "Subsystems/EditorActorSubsystem.h"
 #include "Engine/StaticMeshActor.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "AssetToolsModule.h"
+#include "Factories//MaterialFactoryNew.h"
+#include "EditorAssetLibrary.h"
+#include "Materials/MaterialExpressionTextureSample.h"
+#include "EditorUtilityLibrary.h"
+#include "EditorAssetLibrary.h"
 
 #include "MyDebugger.h"
 
@@ -30,6 +36,7 @@ namespace Utils {
 	}
 }
 
+#pragma region Actor
 void UCustomEditorUtilityWidget::SelectedAllActorsWithSameMesh()
 {
 	GetEditorActorSubsystem();
@@ -264,3 +271,225 @@ void UCustomEditorUtilityWidget::GetEditorActorSubsystem()
 		EditorActorSubsystem = GEditor->GetEditorSubsystem<UEditorActorSubsystem>();
 	}
 }
+
+#pragma endregion // Actor
+
+#pragma region Material
+
+void UCustomEditorUtilityWidget::CreateMaterial()
+{
+	FAssetToolsModule& AssetToolsModule = 
+		FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+
+	FString PackagePath = TEXT("/Game/Materials");
+	FString CleanFileName = m_FileName.TrimStartAndEnd();
+	if (CleanFileName.IsEmpty())
+	{
+		CleanFileName = TEXT("NewMaterial");
+	}
+	if (!CleanFileName.StartsWith(TEXT("M_")))
+	{
+		CleanFileName = TEXT("M_") + CleanFileName;
+	}
+	if (!UEditorAssetLibrary::DoesDirectoryExist(PackagePath))
+	{
+		if (!UEditorAssetLibrary::MakeDirectory(PackagePath))
+		{
+			POPUP_ERROR(TEXT("Failed to create directory: %s"), *PackagePath);
+			return;
+		}
+	}
+
+	FString UniquePackageName;
+	FString UniqueAssetName;
+	AssetToolsModule.Get().CreateUniqueAssetName(
+		PackagePath / CleanFileName,
+		TEXT(""),
+		UniquePackageName,
+		UniqueAssetName
+	);
+
+	UMaterialFactoryNew* MaterialFactory = NewObject<UMaterialFactoryNew>();
+	UObject* NewAsset = AssetToolsModule.Get().CreateAsset(
+		UniqueAssetName,
+		FPackageName::GetLongPackagePath(UniquePackageName),
+		UMaterial::StaticClass(),
+		MaterialFactory
+	);
+
+	UMaterial* NewMaterial = Cast<UMaterial>(NewAsset);
+	if (NewMaterial)
+	{
+		NOTIFY_SUCCESS(TEXT("Successfully created Material: %s"), *NewAsset->GetPathName());
+		UEditorAssetLibrary::SaveAsset(NewAsset->GetPathName());
+	}
+	else
+	{
+			NOTIFY_SUCCESS(TEXT("Failed created Material: %s"), *UniqueAssetName);
+		return;
+	}
+
+	// add texture node for material
+	TArray<FAssetData> SelectedAssetDatas = UEditorUtilityLibrary::GetSelectedAssetData();
+	TArray<UTexture2D*> SelectedTextures = CastSelectedAssetsToUTexture2D(SelectedAssetDatas);
+	int32 OffsetY = 0;
+	for (const auto& Texture : SelectedTextures)
+	{
+		CreateTextureNode(NewMaterial, Texture, FIntPoint(-500, 260 * OffsetY++));
+	}
+
+	UEditorAssetLibrary::SyncBrowserToObjects({ NewMaterial->GetPathName() });
+}
+
+
+TArray<UTexture2D*> UCustomEditorUtilityWidget::CastSelectedAssetsToUTexture2D(const TArray<FAssetData>& SelectedAssetDatas)
+{
+	TArray<UTexture2D*> FilteredAsssets;
+	for (const auto& SelectedAssetData : SelectedAssetDatas)
+	{
+		if (SelectedAssetData.GetClass() == UTexture2D::StaticClass())
+		{
+			FilteredAsssets.Add(Cast<UTexture2D>(SelectedAssetData.GetAsset()));
+		}
+	}
+
+	return FilteredAsssets;
+}
+
+void UCustomEditorUtilityWidget::CreateTextureNode(UMaterial* Material, UTexture2D* Texture, FIntPoint NodePos)
+{
+	UMaterialExpressionTextureSample* TextureSampleNode =
+		NewObject<UMaterialExpressionTextureSample>(Material);
+	if (!TextureSampleNode)
+		return;
+
+	FString TextureName = Texture->GetName();
+
+	FTextureNodeParams NP;
+	NP.Material = Material;
+	NP.Texture = Texture;
+	NP.SamplerNode = TextureSampleNode;
+
+	ETextureCategory TextureType = GetTextureCategoryByName(TextureName);
+	switch (TextureType)
+	{
+	case ETextureCategory::BaseColor:
+	{
+		NP.CompressionSettings = TextureCompressionSettings::TC_Default;
+		NP.bSRGB = true;
+		NP.SamplerType = EMaterialSamplerType::SAMPLERTYPE_Color;
+		NP.InputMaterialProperty = EMaterialProperty::MP_BaseColor;
+		NP.OutputIndex = 0;
+		NP.NodePos = NodePos;
+		break;
+	}
+	case ETextureCategory::Normal:
+	{
+		NP.CompressionSettings = TextureCompressionSettings::TC_Normalmap;
+		NP.bSRGB = false;
+		NP.SamplerType = EMaterialSamplerType::SAMPLERTYPE_Normal;
+		NP.InputMaterialProperty = EMaterialProperty::MP_Normal;
+		NP.OutputIndex = 0;
+		NP.NodePos = NodePos;
+		break;
+	}
+	case ETextureCategory::Roughness:
+	{
+		NP.CompressionSettings = TextureCompressionSettings::TC_Default;
+		NP.bSRGB = false;
+		NP.SamplerType = EMaterialSamplerType::SAMPLERTYPE_LinearColor;
+		NP.InputMaterialProperty = EMaterialProperty::MP_Roughness;
+		NP.OutputIndex = 0;
+		NP.NodePos = NodePos;
+		break;
+	}
+	case ETextureCategory::Metallic:
+	{
+		NP.CompressionSettings = TextureCompressionSettings::TC_Default;
+		NP.bSRGB = false;
+		NP.SamplerType = EMaterialSamplerType::SAMPLERTYPE_LinearColor;
+		NP.InputMaterialProperty = EMaterialProperty::MP_Metallic;
+		NP.OutputIndex = 0;
+		NP.NodePos = NodePos;
+		break;
+	}
+	case ETextureCategory::Specular:
+	{
+		NP.CompressionSettings = TextureCompressionSettings::TC_Default;
+		NP.bSRGB = false;
+		NP.SamplerType = EMaterialSamplerType::SAMPLERTYPE_LinearColor;
+		NP.InputMaterialProperty = EMaterialProperty::MP_Specular;
+		NP.OutputIndex = 0;
+		NP.NodePos = NodePos;
+		break;
+	}
+	case ETextureCategory::Opacity:
+	{
+		NP.CompressionSettings = TextureCompressionSettings::TC_Default;
+		NP.bSRGB = false;
+		NP.SamplerType = EMaterialSamplerType::SAMPLERTYPE_LinearColor;
+		NP.InputMaterialProperty = EMaterialProperty::MP_Opacity;
+		NP.OutputIndex = 0;
+		NP.NodePos = NodePos;
+		break;
+	}
+	case ETextureCategory::AmbientOcclusion:
+	{
+		NP.CompressionSettings = TextureCompressionSettings::TC_Default;
+		NP.bSRGB = false;
+		NP.SamplerType = EMaterialSamplerType::SAMPLERTYPE_LinearColor;
+		NP.InputMaterialProperty = EMaterialProperty::MP_AmbientOcclusion;
+		NP.OutputIndex = 0;
+		NP.NodePos = NodePos;
+		break;
+	}
+	case ETextureCategory::Unknown:
+	{
+		POPUP_ERROR(TEXT("Unknown ETextureCategory for: %s"), *Texture->GetName());
+		TextureSampleNode->MarkAsGarbage();
+		return;
+	}
+	}
+
+	ApplySamplerToMaterialProperty(NP);
+}
+
+void UCustomEditorUtilityWidget::ApplySamplerToMaterialProperty(FTextureNodeParams& NP)
+{
+	if (NP.Material->GetExpressionInputForProperty(NP.InputMaterialProperty)->IsConnected())
+	{
+		NOTIFY_WARN(TEXT("The InputMaterialProperty has Connected"));
+		if (NP.SamplerNode) NP.SamplerNode->MarkAsGarbage();
+		return;
+	}
+	// setup Texture
+	NP.Texture->CompressionSettings = NP.CompressionSettings;
+	NP.Texture->SRGB = NP.bSRGB;
+	NP.Texture->PostEditChange();
+
+	// set up node
+	NP.SamplerNode->Texture = NP.Texture;
+	NP.SamplerNode->SamplerType = NP.SamplerType;
+
+	NP.SamplerNode->MaterialExpressionEditorX += NP.NodePos.X;
+	NP.SamplerNode->MaterialExpressionEditorY += NP.NodePos.Y;
+
+	// set up material
+	NP.Material->GetExpressionCollection().AddExpression(NP.SamplerNode);
+	NP.Material->GetExpressionInputForProperty(NP.InputMaterialProperty)->Connect(NP.OutputIndex, NP.SamplerNode);
+	NP.Material->PostEditChange();
+}
+
+ETextureCategory UCustomEditorUtilityWidget::GetTextureCategoryByName(const FString& InTextureName)
+{
+	for (const auto& Pair : m_PostfixMap)
+	{
+		if (InTextureName.EndsWith(Pair.Key, ESearchCase::IgnoreCase))
+		{
+			return Pair.Value;
+		}
+	}
+	return ETextureCategory::Unknown;
+}
+
+#pragma endregion

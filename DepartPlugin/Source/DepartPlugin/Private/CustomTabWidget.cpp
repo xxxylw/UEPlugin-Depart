@@ -6,6 +6,7 @@
 #include "MyDebugger.h"
 #include "CustomStyle.h"
 
+#include "Widgets/Input/SSegmentedControl.h"
 #include "Widgets/Layout/SWidgetSwitcher.h"
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
@@ -35,28 +36,26 @@ void SCunstomTabWidget::Construct(const FArguments& InArgs)
 
 	ChildSlot
 	[
-		//SNew(SVerticalBox)
-		//	+ SVerticalBox::Slot()
-		//	.AutoHeight()
-		//	[
-		//		SwitchButton()
-		//	]
+		SNew(SVerticalBox)
+		+ SVerticalBox::Slot()
+		.AutoHeight()
+		[
+			SegmentdControl()
+		]
 
-		//+SVerticalBox::Slot()
-		//.AutoHeight()
-		//[
-		//	SAssignNew(m_WidgetSwitcher, SWidgetSwitcher)
-		//		+ SWidgetSwitcher::Slot()
-		//		[
-		//			CreateWidget0()
-		//		]
+		+ SVerticalBox::Slot()
+		[
+			SAssignNew(m_WidgetSwitcher, SWidgetSwitcher)
+				+ SWidgetSwitcher::Slot()
+				[
+					CreateWidget0()
+				]
 
-		//	+ SWidgetSwitcher::Slot()
-		//		[
-		//			CreateWidget1()
-		//		]
-		//]
-		CreateWidget0()
+			+ SWidgetSwitcher::Slot()
+				[
+					CreateWidget1()
+				]
+		]
 	];
 }
 
@@ -186,33 +185,21 @@ TSharedRef<SWidget> SCunstomTabWidget::CreateWidget1()
 		;
 }
 
-TSharedRef<SWidget> SCunstomTabWidget::SwitchButton()
+TSharedRef<SWidget> SCunstomTabWidget::SegmentdControl()
 {
 	return
-		SNew(SHorizontalBox)
-		+ SHorizontalBox::Slot()
-		.AutoWidth()
-		.Padding(5.5)
-		[
-			SNew(SButton)
-			.Text(FText::FromString(TEXT("Widget0")))
-			.OnClicked_Lambda([this]() {
-				m_WidgetSwitcher->SetActiveWidgetIndex(0);
-				return FReply::Handled();
-			})
-		]
+		SNew(SSegmentedControl<int32>)
+		.OnValueChanged_Lambda([this](int Value) {
+			m_WidgetSwitcher->SetActiveWidgetIndex(Value);
+		})
 
-		+ SHorizontalBox::Slot()
-		.AutoWidth()
-		.Padding(5.5)
-		[
-			SNew(SButton)
-			.Text(FText::FromString(TEXT("Widget1")))
-			.OnClicked_Lambda([this]() {
-				m_WidgetSwitcher->SetActiveWidgetIndex(1);
-				return FReply::Handled();
-			})
-		]
+		+ SSegmentedControl<int32>::Slot(0)
+		.Icon(FCustomStyle::Get().GetBrush(CustomStyleSetName::Bear))
+		.Text(FText::FromString(TEXT("Widget0")))
+
+		+ SSegmentedControl<int32>::Slot(1)
+		.Icon(FCustomStyle::Get().GetBrush(CustomStyleSetName::SnowMan))
+		.Text(FText::FromString(TEXT("Widget1")))
 		;
 }
 
